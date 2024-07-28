@@ -5,7 +5,7 @@
 ```
 docker compose up
 ```
-###以下のSQL文でテーブルを作成する
+### 以下のSQL文でテーブルを作成する
 ```
 docker compose exec mysql mysql kyototech
 ```
