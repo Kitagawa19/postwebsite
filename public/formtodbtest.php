@@ -64,8 +64,8 @@ $select_sth->execute();
       echo "このページは存在しません";
     } else {
       foreach ($select_sth as $data): ?>
-        <p>>><?=$data['id']?></br><?= nl2br(htmlspecialchars($data['content'])) ?></p>
-        <p><?= $data['created_at'] ?></p>
+        <p><?= $data['id']?></br>日時：<?= $data['created_at']?></p>
+        <p><?= nl2br(htmlspecialchars($data['content']))?></p>
         <?php endforeach; 
     }
   }
