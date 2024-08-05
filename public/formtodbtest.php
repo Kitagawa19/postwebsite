@@ -33,7 +33,13 @@ $select_sth->bindParam(':count_per_page', $count_per_page, PDO::PARAM_INT);
 $select_sth->bindParam(':skip_page', $skip_page, PDO::PARAM_INT);
 $select_sth->execute();
 ?>
-
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+    <title>掲示板</title>
+    <link rel="stylesheet" type="text/css" href="css/style.css">
+</head>
 <div>
 <div>
 <h1>掲示板</h1>
@@ -66,13 +72,13 @@ $select_sth->execute();
       foreach ($select_sth as $data): ?>
         <div>
         <p><?= $data['id']?></p>
-        <button type="submit">返信する</button>
         </div>
         <p>日時：<?= $data['created_at']?></p>
         <p><?= nl2br(htmlspecialchars($data['content']))?></p>
+        <button type="submit">返信する</button>
         <?php endforeach; 
     }
   }
 ?>
 </div>
-
+</html>
