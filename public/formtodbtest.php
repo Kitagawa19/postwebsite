@@ -76,7 +76,7 @@ $select_sth->execute();
         </div>
         <p class="post-date">日時：<?= $data['created_at']?></p>
         <p class="post-content"><?= nl2br(htmlspecialchars($data['content']))?></p>
-        <button type="submit">返信する</button>
+        
         <?php endforeach; 
     }
   }
