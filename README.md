@@ -17,3 +17,4 @@ CREATE TABLE POSTS(
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP  
 )
 ```
+以上をしてから`ipアドレス/file名`で表示されます
