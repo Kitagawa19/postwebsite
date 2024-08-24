@@ -12,6 +12,8 @@ docker compose exec mysql mysql kyototech
 
 ```
 CREATE TABLE POSTS(
-  ~~
+  id INT AUTO_INCREMENT PRIMARY KEY  
+  content TEXT NOT NULL  
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP  
 )
 ```
