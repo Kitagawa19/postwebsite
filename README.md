@@ -11,10 +11,24 @@ docker compose exec mysql mysql kyototech
 ```
 
 ```
-CREATE TABLE POSTS(
-  id INT AUTO_INCREMENT PRIMARY KEY  
-  text TEXT NOT NULL  
+CREATE TABLE users(
+  id INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY  
+  name TEXT NOT NULL  
+  email TEXT NOT NULL
+  password TEXT NOT NULL
+  icon_filename TEXT DEFAULT NULL
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP  
 )
 ```
+
+```
+CREATE TABLE bbs_entries(
+  id INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY
+  user_id INT UNSIGNED NOT NULL
+  body TEXT NOT NULL
+  image_filename TEXT DEFAULT NULL
+  created_at DATATIME DEFAULT CURRENT_TIMESTAMP
+)
+```
+
 以上をしてから`ipアドレス/file名`で表示されます
