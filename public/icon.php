@@ -63,4 +63,4 @@ if (isset($_FILES['image']) && !empty($_FILES['image']['tmp_name'])) {
     <input type="file" accept="image/*" name="image">
   </div>
   <button type="submit">アップロード</button>
-</form>i
+</form>
