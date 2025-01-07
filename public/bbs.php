@@ -1,51 +1,61 @@
-<?php 
+<?php
 session_start();
 $dbh = new PDO('mysql:host=mysql;dbname=kyototech', 'root', '');
 
 if (isset($_POST['body']) && !empty($_SESSION['login_user_id'])) {
-  // POSTで送られてくるフォームパラメータ body がある かつ ログイン状態 の場合
+    // 投稿内容があり、ログイン状態の場合
 
-  $image_filename = null;
-  if (isset($_FILES['image']) && !empty($_FILES['image']['tmp_name'])) {
-    // アップロードされた画像がある場合
-    if (preg_match('/^image\//', mime_content_type($_FILES['image']['tmp_name'])) !== 1) {
-      // アップロードされたものが画像ではなかった場合
-      header("HTTP/1.1 302 Found");
-      header("Location: ./bbs.php");
-      return;
+    $image_filenames = []; // 保存する画像ファイル名を格納する配列
+
+    if (isset($_FILES['images']) && !empty($_FILES['images']['tmp_name'][0])) {
+        foreach ($_FILES['images']['tmp_name'] as $index => $tmp_name) {
+            if ($index >= 4) {
+                break; // 最大4枚まで
+            }
+            if (preg_match('/^image\//', mime_content_type($tmp_name)) !== 1) {
+                // アップロードされたものが画像ではなかった場合
+                header("HTTP/1.1 302 Found");
+                header("Location: ./bbs.php");
+                exit;
+            }
+            // 元のファイル名から拡張子を取得
+            $pathinfo = pathinfo($_FILES['images']['name'][$index]);
+            $extension = $pathinfo['extension'];
+            // 新しいファイル名を決める
+            $image_filename = strval(time()) . bin2hex(random_bytes(5)) . '.' . $extension;
+            $filepath = '/var/www/upload/image/' . $image_filename;
+
+            // ファイルを保存
+            if (move_uploaded_file($tmp_name, $filepath)) {
+                $image_filenames[] = $image_filename; // ファイル名を配列に追加
+            }
+        }
     }
-    // 元のファイル名から拡張子を取得
-    $pathinfo = pathinfo($_FILES['image']['name']);
-    $extension = $pathinfo['extension'];
-    // 新しいファイル名を決める。他の投稿の画像ファイルと重複しないように時間+乱数で決める。
-    $image_filename = strval(time()) . bin2hex(random_bytes(25)) . '.' . $extension;
-    $filepath =  '/var/www/upload/image/' . $image_filename;
-    move_uploaded_file($_FILES['image']['tmp_name'], $filepath);
-  }
 
-  // insertする
-  $insert_sth = $dbh->prepare("INSERT INTO bbs_entries (user_id, body, image_filename) VALUES (:user_id, :body, :image_filename);");
-  $insert_sth->execute([
-    ':user_id' => $_SESSION['login_user_id'], // ログインしている会員情報の主キー
-    ':body' => $_POST['body'],
-    ':image_filename' => $image_filename,
-  ]);
-  // 処理が終わったらリダイレクトする
-  // リダイレクトしないと，リロード時にまた同じ内容でPOSTすることになる
-  header("HTTP/1.1 302 Found");
-  header("Location: ./bbs.php");
-  return;
+    // データベースに挿入
+    $insert_sth = $dbh->prepare("INSERT INTO bbs_entries (user_id, body, image_filename) VALUES (:user_id, :body, :image_filename);");
+    $insert_sth->execute([
+        ':user_id' => $_SESSION['login_user_id'], // ログインしている会員情報の主キー
+        ':body' => $_POST['body'],
+        ':image_filename' => json_encode($image_filenames), // JSON形式で保存
+    ]);
+
+    // 処理が終わったらリダイレクト
+    header("HTTP/1.1 302 Found");
+    header("Location: ./bbs.php");
+    exit;
 }
 ?>
 
-<?php if(empty($_SESSION['login_user_id'])): ?>
+<?php if (empty($_SESSION['login_user_id'])): ?>
   投稿するには<a href="/login.php">ログイン</a>が必要です。
 <?php else: ?>
 </div><a href="/icon.php">アイコン画像の設定はこちら</a>。</div>
 <form method="POST" action="./bbs.php" enctype="multipart/form-data">
   <textarea name="body"></textarea>
   <div style="margin: 1em 0;">
-    <input type="file" accept="image/*" name="image" id="imageInput">
+    <input type="file" accept="image/*" name="images[]" id="imageInput" multiple>
+    <p>※画像は最大4枚までアップロード可能です。</p>
   </div>
   <button type="submit">送信</button>
 </form>
@@ -67,72 +77,67 @@ if (isset($_POST['body']) && !empty($_SESSION['login_user_id'])) {
   <dt>日時</dt>
   <dd data-role="entryCreatedAtArea"></dd>
   <dt>内容</dt>
-  <dd data-role="entryBodyArea">
-  </dd>
+  <dd data-role="entryBodyArea"></dd>
 </dl>
 <div id="entriesRenderArea"></div>
 
 <script>
 document.addEventListener("DOMContentLoaded", () => {
-  const entryTemplate = document.getElementById('entryTemplate');
-  const entriesRenderArea = document.getElementById('entriesRenderArea');
-  const request = new XMLHttpRequest();
-  request.onload = (event) => {
-    const response = event.target.response;
-    response.entries.forEach((entry) => {
-      // テンプレートとするものから要素をコピー
-      const entryCopied = entryTemplate.cloneNode(true);
-      // display: none を display: block に書き換える
-      entryCopied.style.display = 'block';
+    const entryTemplate = document.getElementById('entryTemplate');
+    const entriesRenderArea = document.getElementById('entriesRenderArea');
+    const request = new XMLHttpRequest();
+    request.onload = (event) => {
+        const response = event.target.response;
+        response.entries.forEach((entry) => {
+            const entryCopied = entryTemplate.cloneNode(true);
+            entryCopied.style.display = 'block';
 
-      // 番号(ID)を表示
-      entryCopied.querySelector('[data-role="entryIdArea"]').innerText = entry.id.toString();
+            entryCopied.querySelector('[data-role="entryIdArea"]').innerText = entry.id.toString();
 
-      // アイコン画像が存在する場合は表示 なければimg要素ごと非表示に
-      if (entry.user_icon_file_url) {
-        entryCopied.querySelector('[data-role="entryUserIconImage"]').src = entry.user_icon_file_url;
-      } else {
-        entryCopied.querySelector('[data-role="entryUserIconImage"]').style.display = 'none';
-      }
-      // 名前を表示
-      entryCopied.querySelector('[data-role="entryUserNameArea"]').innerText = entry.user_name;
+            if (entry.user_icon_file_url) {
+                entryCopied.querySelector('[data-role="entryUserIconImage"]').src = entry.user_icon_file_url;
+            } else {
+                entryCopied.querySelector('[data-role="entryUserIconImage"]').style.display = 'none';
+            }
+            entryCopied.querySelector('[data-role="entryUserNameArea"]').innerText = entry.user_name;
 
-      // 投稿日時を表示
-      entryCopied.querySelector('[data-role="entryCreatedAtArea"]').innerText = entry.created_at;
+            entryCopied.querySelector('[data-role="entryCreatedAtArea"]').innerText = entry.created_at;
 
-      // 本文を表示 (ここはHTMLなのでinnerHTMLで)
-      entryCopied.querySelector('[data-role="entryBodyArea"]').innerHTML = entry.body;
+            entryCopied.querySelector('[data-role="entryBodyArea"]').innerHTML = entry.body;
 
-      // 画像が存在する場合に本文の下部に画像を表示
-      if (entry.image_file_url) {
-        const imageElement = new Image();
-        imageElement.src = entry.image_file_url; // 画像URLを設定
-        imageElement.style.display = 'block'; // ブロック要素にする (img要素はデフォルトではインライン要素のため)
-        imageElement.style.marginTop = '1em'; // 画像上部の余白を設定
-        imageElement.style.maxHeight = '300px'; // 画像を表示する最大サイズ(縦)を設定
-        imageElement.style.maxWidth = '300px'; // 画像を表示する最大サイズ(横)を設定
-        entryCopied.querySelector('[data-role="entryBodyArea"]').appendChild(imageElement); // 本文エリアに画像を追加
-      }
+            // 複数画像を表示
+            if (entry.image_file_urls && Array.isArray(entry.image_file_urls)) {
+                entry.image_file_urls.forEach((url) => {
+                    const imageElement = new Image();
+                    imageElement.src = url;
+                    imageElement.style.display = 'block';
+                    imageElement.style.marginTop = '1em';
+                    imageElement.style.maxHeight = '300px';
+                    imageElement.style.maxWidth = '300px';
+                    entryCopied.querySelector('[data-role="entryBodyArea"]').appendChild(imageElement);
+                });
+            }
 
-      // 最後に実際の描画を行う
-      entriesRenderArea.appendChild(entryCopied);
+            entriesRenderArea.appendChild(entryCopied);
+        });
+    };
+    request.open('GET', '/bbs_json.php', true); // bbs_json.php を叩く
+    request.responseType = 'json';
+    request.send();
+
+    const imageInput = document.getElementById("imageInput");
+    imageInput.addEventListener("change", () => {
+        if (imageInput.files.length > 4) {
+            alert("画像は最大4枚まで選択できます。");
+            imageInput.value = ""; // 入力をクリア
+        }
+        Array.from(imageInput.files).forEach(file => {
+            if (file.size > 5 * 1024 * 1024) {
+                alert("5MB以下のファイルを選択してください。");
+                imageInput.value = ""; // 入力をクリア
+            }
+        });
     });
-  }
-  request.open('GET', '/bbs_json.php', true); // bbs_json.php を叩く
-  request.responseType = 'json';
-  request.send();
-
-  const imageInput = document.getElementById("imageInput");
-  imageInput.addEventListener("change", () => {
-    if (imageInput.files.length < 1) {
-      // 未選択の場合
-      return;
-    }
-    if (imageInput.files[0].size > 5 * 1024 * 1024) {
-      // ファイルが5MBより多い場合
-      alert("5MB以下のファイルを選択してください。");
-      imageInput.value = "";
-    }
-  });
 });
 </script>
+
