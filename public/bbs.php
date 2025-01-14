@@ -44,6 +44,15 @@ if (isset($_POST['body']) && !empty($_SESSION['login_user_id'])) {
 <?php if (empty($_SESSION['login_user_id'])): ?>
   投稿するには<a href="/login.php">ログイン</a>が必要です。
 <?php else: ?>
+<header>掲示板</header>
+<nav class="menu">
+  <ul>
+    <li><a href="/login.php">Login</a></li>
+    <li><a href="/signup.php">Signup</a></li>
+    <li><a href="/logout.php">Logout</a></li>
+  </ul>
+</nav>
+
 </div><a href="/icon.php">アイコン画像の設定はこちら</a>。</div>
 <form method="POST" action="./bbs.php" enctype="multipart/form-data">
   <textarea name="body"></textarea>
