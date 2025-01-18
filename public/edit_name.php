@@ -32,7 +32,7 @@ if (isset($_POST['name'])) {
   return;
 }
 ?>
-
+<a href="/bbs.php">掲示板に戻る</a>
 <h1>名前変更</h1>
 <form method="POST">
   <input type="text" name="name" value="<?= htmlspecialchars($user['name']) ?>">
