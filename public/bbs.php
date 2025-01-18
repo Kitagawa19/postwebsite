@@ -53,7 +53,10 @@ if (isset($_POST['body']) && !empty($_SESSION['login_user_id'])) {
   </ul>
 </nav>
 
-</div><a href="/icon.php">アイコン画像の設定はこちら</a>。</div>
+<div>
+  <a href="/icon.php">アイコン画像の設定はこちら</a></br>
+  <a href="/edit_name.php">名前の変更はこちら</a> 
+</div>
 <form method="POST" action="./bbs.php" enctype="multipart/form-data">
   <textarea name="body"></textarea>
   <div style="margin: 1em 0;">
