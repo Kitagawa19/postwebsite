@@ -3,6 +3,7 @@
 
 ### コンテナの起動
 ```
+docker compose build
 docker compose up
 ```
 ### 以下のSQL文でテーブルを作成する
@@ -29,9 +30,4 @@ CREATE TABLE bbs_entries(
   image_filename TEXT DEFAULT NULL
   created_at DATATIME DEFAULT CURRENT_TIMESTAMP
 )
-```
-
-以上を行なった上で以下のURLをたたくと表示されます：
-```
-ipアドレス/
 ```
